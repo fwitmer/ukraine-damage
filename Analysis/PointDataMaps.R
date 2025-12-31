@@ -8,17 +8,18 @@
 #
 ##########################################################################
 
-library(sf)
-library(dplyr)
-library(ggplot2)
-library(lubridate) # for months(1) addition in monthly_cnts function
-#install.packages("lubridate")
-
 #outDir <- "C:/Users/witmer/Dropbox/UAA/Research/Conflict_RS/AnnalsPlaceAnnihilation/Data/VIINA/"
-baseDir <- "D:/Users/witmer/Documents/UAA/Research/Conflict_RS/Ukraine"
+#baseDir <- "D:/Users/witmer/Documents/UAA/Research/Conflict_RS/Ukraine"
+baseDir <- getwd()
 analysisDir <- file.path(baseDir, "Analysis/")
 if (!dir.exists(analysisDir))
   print(paste("ERROR invalid analysisDir", analysisDir))
+
+source(file.path(baseDir, "LoadInstallLib.R"))
+load_install_lib("sf")
+load_install_lib("dplyr")
+load_install_lib("ggplot2")
+load_install_lib("lubridate") # for months(1) addition in monthly_cnts function
 
 #end_date <- as.Date("2022-05-30")
 #end_date <- as.Date("2023-10-30")
@@ -118,30 +119,26 @@ adm3_viina <- monthly_cnts(viina_sf, adm3_sf, start_date, end_date)
 head(adm3_viina)
 write_shp(adm3_viina, "ADM3", "VIINA")
 # 185 secs
-adm4_viina <- monthly_cnts(viina_sf, adm4_sf, start_date, end_date)
-head(adm4_viina)
-write_shp(adm4_viina, "ADM4", "VIINA")
+#adm4_viina <- monthly_cnts(viina_sf, adm4_sf, start_date, end_date)
+#head(adm4_viina)
+#write_shp(adm4_viina, "ADM4", "VIINA")
 
 ## ACLED aggregations
 adm3_acled <- monthly_cnts(acled_sf, adm3_sf, start_date, end_date) # ~66 seconds
 head(adm3_acled)
 write_shp(adm3_acled, "ADM3", "ACLED")
 
-adm4_acled <- monthly_cnts(acled_sf, adm4_sf, start_date, end_date)
-head(adm4_acled)
-write_shp(adm4_acled, "ADM4", "ACLED")
+#adm4_acled <- monthly_cnts(acled_sf, adm4_sf, start_date, end_date)
+#head(adm4_acled)
+#write_shp(adm4_acled, "ADM4", "ACLED")
 
 
 ####################
 
-#install.packages("gganimate")
-#install.packages("transformr")
-#install.packages("gifski")
-
-#library(gifski)
-#library(gganimate)
-#library(transformr)
-library(tidyr)
+#load_install_lib("gganimate")
+#load_install_lib("transformr")
+#load_install_lib("gifski")
+load_install_lib("tidyr")
 
 ########################################################
 # can re-start here, but some of the fields might be wonky from the shapefiles
@@ -195,15 +192,57 @@ total_events_km2 <- function(mnth_cnts_sf, borders_str, events_str, log_offset =
   #  log_offset <- 0.2; max_val <- 4.9
   #  log_offset <- 0.5; max_val <- 4.0 # max_val hardcoded based on range below
     mnth_cnts_sf$CntsVar <- log(mnth_cnts_sf$CntsKm2 + log_offset) - log(log_offset)
-  } else { # apply sqrt transform
-    leg_label <- expression("sqrt(Cnts/Km"^2*")")
-    file_mod <- "_sqrt"
-    mnth_cnts_sf$CntsVar <- sqrt(mnth_cnts_sf$CntsKm2)
+  } else { # sqrt breaks 
+    #leg_label <- expression("sqrt(Cnts/Km"^2*")")
+    #file_mod <- "_sqrt"
+    #mnth_cnts_sf$CntsVar <- sqrt(mnth_cnts_sf$CntsKm2)
+    
+    # ---- sqrt categorical bins ----
+    breaks <- c(0, 1, 4, 9, 16, Inf)
+
+    # strictly positive bins
+    mnth_cnts_sf$CntsCat <- cut(
+      mnth_cnts_sf$CntsKm2,
+      breaks = breaks,
+      include.lowest = TRUE,
+      right = FALSE
+    ) %>% as.character()  # convert to character so we can relabel
+#    browser()
+
+    # exact zero
+    mnth_cnts_sf$CntsCat[abs(mnth_cnts_sf$CntsKm2) < .Machine$double.eps] <- "0"
+    map_labels <- c(
+      "0"        = "0",
+      "[0,1)"    = "(0–1)",
+      "[1,4)"    = "[1–4)",
+      "[4,9)"    = "[4–9)",
+      "[9,16)"   = "[9–16)",
+      "[16,Inf]" = "≥16"
+    )
+    mnth_cnts_sf$CntsCat <- map_labels[mnth_cnts_sf$CntsCat]
+    labels <- c("0", "(0–1)", "[1–4)", "[4–9)", "[9–16)", "≥16")
+
+    # convert to factor with your custom labels in the correct order
+    mnth_cnts_sf$CntsCat <- factor(
+      mnth_cnts_sf$CntsCat,
+      levels = labels,
+      ordered = TRUE
+    )
+
+    leg_label <- expression("Total events/km"^2)
+    file_mod  <- "_cat"
+
   }
-  print('Range of CntsVar')
-  print(range(mnth_cnts_sf$CntsVar)) # for VIINA, 0 to 4.83; 0-4.5 for ACLED
-  max_val <- max(mnth_cnts_sf$CntsVar)
-  print(paste('Max map value:', max_val))
+#  print('Range of CntsVar')
+#  print(range(mnth_cnts_sf$CntsVar)) # for VIINA, 0 to 4.83; 0-4.5 for ACLED
+#  max_val <- max(mnth_cnts_sf$CntsVar)
+#  print(paste('Max map value:', max_val))
+  print("category counts:")
+  print(table(mnth_cnts_sf$CntsCat))
+#     0  (0–1)  [1–4)  [4–9) [9–16)    ≥16 
+#  1098    624     31     12      3      1  VIINA counts
+#  1153    570     40      4      1      1  ACLED counts
+#  browser()
 
   if (borders_str == "ADM3")
     border_col <- "gray" #"#2b2b2b" 
@@ -215,28 +254,38 @@ total_events_km2 <- function(mnth_cnts_sf, borders_str, events_str, log_offset =
   # set map colors to match monthly count plots from PlotEventData.R
   #  scale_color_manual(values = c("ACLED" = "#377eb8", "VIINA" = "#984ea3"))
   # https://www.w3schools.com/colors/colors_picker.asp
-  if (events_str == "ACLED")
-    map_color <- "#17364f" # 20% of original color: "#377eb8"
-  else if (events_str == "VIINA")
-    map_color <- "#402145" # 20% of original color: "#984ea3"
-  else
+  if (events_str == "ACLED") {
+    #map_color <- "#17364f" # 20% of original color: "#377eb8"
+    #brewer_pal <- "Blues"
+    brewer_pal <- RColorBrewer::brewer.pal(5, "Blues")
+  } else if (events_str == "VIINA") {
+    #map_color <- "#402145" # 20% of original color: "#984ea3"
+#    brewer_pal <- "Purples"
+    brewer_pal <- RColorBrewer::brewer.pal(5, "Purples")
+  } else
     print(paste("ERROR: unexpected events_str", events_str))
+  names(brewer_pal) <- c("(0–1)", "[1–4)", "[4–9)", "[9–16)", "≥16")
+  brewer_pal <- c("0" = "white", brewer_pal)  # exact zero is white
   
   map_plt <- ggplot(mnth_cnts_sf) +
-    geom_sf(aes(fill = CntsVar), color=border_col) +
+    #geom_sf(aes(fill = CntsVar), color=border_col) +
+    geom_sf(aes(fill = CntsCat), color = border_col) +
     #scale_fill_lajolla_c() + # https://r-charts.com/color-palettes/
     geom_sf(data = adm1_sf, fill = NA, color = "#2b2b2b", linewidth = 0.1) +
     geom_sf(data = adm0_sf, fill = NA, color = "#101010", linewidth = 0.4) +
-    scale_fill_gradientn(
-#      colors = c("lightgray", map_color), # Light to strong colors
-#      colors = c("#f2f2f2", map_color), # Light to strong colors #e6e6e6
-      colors = c("white", map_color), # Light to strong colors #e6e6e6
-      values = scales::rescale(c(0, max_val)),
-      limits = c(0, max_val),  # Force all maps to have the same limits
-      na.value = "white" # Define a color for NA values
+    scale_fill_manual(
+      values = brewer_pal,
+      na.value = "white",
+      drop = FALSE
     ) +
-     labs(title = bquote(.(events_str) ~ "Total Events/Km"^2), fill = leg_label) +
-#    labs(title = paste(events_str, "Total Events/Km2"), fill = leg_label) +
+#    scale_fill_gradientn(
+#      colors = c("white", map_color), # Light to strong colors #e6e6e6
+#      values = scales::rescale(c(0, max_val)),
+#      limits = c(0, max_val),  # Force all maps to have the same limits
+#      na.value = "white" # Define a color for NA values
+#    ) +
+#     labs(title = bquote(.(events_str) ~ "Total Events/Km"^2), fill = leg_label) +
+    labs(fill = leg_label) +
     theme_minimal() +
     theme(
       panel.background = element_rect(fill = "white", color = NA), # White background for the map
@@ -276,15 +325,38 @@ total_events_km2 <- function(mnth_cnts_sf, borders_str, events_str, log_offset =
 viina_plt <- total_events_km2(adm3_viina, "ADM3", "VIINA", log_offset = 10)
 acled_plt <- total_events_km2(adm3_acled, "ADM3", "ACLED", log_offset = 10)
 
-library(patchwork)
-combined <- viina_plt / acled_plt + # "/" stacks vertically
-  plot_annotation(tag_levels = 'A', tag_suffix = ")")
+#viina_plt <- viina_plt + labs(subtitle = "VIINA Total Events / km²")
+#acled_plt <- acled_plt + labs(subtitle = "ACLED Total Events / km²")
+
+load_install_lib("patchwork")
+combined_plt <- viina_plt / acled_plt #+ # "/" stacks vertically
+#  plot_annotation(tag_levels = 'A', tag_suffix = ")")
+
+load_install_lib("cowplot")
+
+final_plot <- ggdraw(combined_plt) +
+  draw_label(
+    "A) VIINA Total Events / km²",
+    x = 0.1, y = 0.98,
+    hjust = 0, vjust = 1,
+    size = 12
+#    fontface = "bold"
+  ) +
+  draw_label(
+    "B) ACLED Total Events / km²",
+    x = 0.1, y = 0.48,
+    hjust = 0, vjust = 1,
+    size = 12
+#    fontface = "bold"
+  )
+
 
 outDir <- file.path(analysisDir, "Total_Event_Maps")
-png_filename <- paste0("ADM3", "_","Combined","_TotEventsMap", "_sqrt", ".png")
+#png_filename <- paste0("ADM3", "_","Combined","_TotEventsMap", "_sqrt", ".png")
+png_filename <- paste0("ADM3", "_","Combined","_TotEventsMap", "_cat", ".png")
 full_file <- file.path(outDir, png_filename)
 print(full_file)
-ggsave(full_file, plot = combined, width = 7, height = 9)
+ggsave(full_file, plot = final_plot, width = 7, height = 9)
 
 
 total_events_km2(adm3_viina, "ADM3", "VIINA", log_offset = FALSE)
@@ -297,6 +369,8 @@ if (FALSE) {
   total_events_km2(adm3_viina, "ADM3", "VIINA", log_offset = 1)
   total_events_km2(adm3_acled, "ADM3", "ACLED", log_offset = 1)
 }
+
+# TODO: modify the below map generation code to use the same breaks as above
 
 #############################
 # write event count maps to disk for each month

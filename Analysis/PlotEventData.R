@@ -3,7 +3,7 @@
 #
 #	plot conflict event point data
 #
-# this script is 'sourced' by PlotEventsAndSAR.R
+# this script is 'sourced' by MonthlyPlot/PlotEventsAndSAR.R
 ##########################################################################
 
 library(dplyr)
@@ -67,6 +67,7 @@ count_and_combine <- function(viina, acled) {
 }
 
 plotCombined <- function(combined_df) {
+  print("WARNING: plot title dates are hard coded & probably wrong!")
   plt <- ggplot(combined_df, aes(x = month, y = n, color = source)) +
     geom_line(linewidth = 1) +
     geom_point(size = 2) +
