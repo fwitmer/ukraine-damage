@@ -6,6 +6,8 @@
 *.zip
 *greyMin.png
 *NoSuperscript.png
+*_cat_Blue*
+*_cat_Purple*
 *LatLon.png
 *legendRight.png
 *BAD*.png
@@ -34,6 +36,7 @@ Analysis/ReadMonthlyData_9May2025.R
 Analysis/ReadMonthlyData_12May2025.R
 Analysis/SAR_DataMaps_12May2025.R
 Analysis/SAR_DataMaps_19May2025.R
+Analysis/SAR_DataMaps_30Dec2025.R
 Analysis/MonthlyPlot/PlotEventsAndSAR_log.txt
 Analysis/Correlations/ADM3_corrNorm_nonZeroSubset.png
 Analysis/MonthCountPlots/(VIINA or ACLED)-SAR_MnthCnts.png

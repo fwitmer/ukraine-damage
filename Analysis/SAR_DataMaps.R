@@ -8,18 +8,18 @@
 #
 ##########################################################################
 
-library(sf)
-library(dplyr)
-library(ggplot2)
-library(tidyr) # for pivot_longer
-library(stringr) # for str_replace_all
-#library(lubridate)
-#install.packages("lubridate")
-
-baseDir <- "D:/Users/witmer/Documents/UAA/Research/Conflict_RS/Ukraine"
+#baseDir <- "D:/Users/witmer/Documents/UAA/Research/Conflict_RS/Ukraine"
+baseDir <- getwd()
 analysisDir <- file.path(baseDir, "Analysis/")
 if (!dir.exists(analysisDir))
   print(paste("ERROR invalid analysisDir", analysisDir))
+
+source(file.path(baseDir, "LoadInstallLib.R"))
+load_install_lib("sf")
+load_install_lib("dplyr")
+load_install_lib("ggplot2")
+load_install_lib("tidyr") # for pivot_longer
+load_install_lib("stringr") # for str_replace_all
 
 # load functions to read/join monthly event data & SAR data & join_GHS function
 source(file.path(analysisDir, "ReadMonthlyData.R"))
@@ -101,7 +101,7 @@ total_sar <- function(mnth_sar_sf, borders_str, sar_str, trans) {
   print('Range of TotSARarea')
   print(range(mnth_sar_sf$TotSARarea)) # 0 to 23.37
   #hist(mnth_sar_sf$TotSARarea) # most are below 2
-  if (trans == "log") {
+  if (trans == "log") { # 8 Jan 2026, this option is now broken
     leg_title <- "log(Area (%))"
     #hist(log(mnth_sar_sf$TotSARarea + 0.2))
     #hist(log(mnth_sar_sf$TotSARarea + 1))
@@ -114,15 +114,67 @@ total_sar <- function(mnth_sar_sf, borders_str, sar_str, trans) {
   } else if (trans == "raw") {
     leg_title <- "Area (%)"
     mnth_sar_sf$TotSARarea_val <- mnth_sar_sf$TotSARarea
+
+    # look at the histogram & count number of districts == 0
+#    browser()
+#    hist(mnth_sar_sf$TotSARarea_val)
+    sum(mnth_sar_sf$TotSARarea_val == 0) # 282
+    sum(mnth_sar_sf$TotSARarea_val < .Machine$double.eps) # 282
+    sum(mnth_sar_sf$TotSARarea_val < 1) # 1134
+    sum(mnth_sar_sf$TotSARarea_val < 2) # 1463
+    sum(mnth_sar_sf$TotSARarea_val < 4) # 1632
+    sum(mnth_sar_sf$TotSARarea_val < 5) # 1670
+    sum(mnth_sar_sf$TotSARarea_val > 9) # 54
+    sum(mnth_sar_sf$TotSARarea_val > 16) # 27
+    # use same PointDataMaps.R breaks:
+    breaks <- c(0, 1, 4, 9, 16, Inf)
+
+    # strictly positive bins
+    mnth_sar_sf$AreaCat <- cut(
+      mnth_sar_sf$TotSARarea_val,
+      breaks = breaks,
+      include.lowest = TRUE,
+      right = FALSE
+    ) %>% as.character()  # convert to character so we can relabel
+#    browser()
+
+    # exact zero
+    mnth_sar_sf$AreaCat[abs(mnth_sar_sf$TotSARarea_val) < .Machine$double.eps] <- "0"
+    map_labels <- c(
+      "0"        = "0",
+      "[0,1)"    = "(0–1)",
+      "[1,4)"    = "[1–4)",
+      "[4,9)"    = "[4–9)",
+      "[9,16)"   = "[9–16)",
+      "[16,Inf]" = "≥16"
+    )
+    mnth_sar_sf$AreaCat <- map_labels[mnth_sar_sf$AreaCat]
+    labels <- c("0", "(0–1)", "[1–4)", "[4–9)", "[9–16)", "≥16")
+
+    # convert to factor with your custom labels in the correct order
+    mnth_sar_sf$AreaCat <- factor(
+      mnth_sar_sf$AreaCat,
+      levels = labels,
+      ordered = TRUE
+    )
+
+    leg_label <- expression("Area (%)")
+    #file_mod  <- "_cat"
+    trans  <- "_cat"
+
   } else {
     print(paste("ERROR: unexpected transformation", trans))
     return(0)
   }
   print('Range of TotSARarea')
-  print(range(mnth_sar_sf$TotSARarea_val)) # 0 to 4.76
+  print(range(mnth_sar_sf$TotSARarea_val)) # 0 to 4.76; 41.4 raw
   max_val <- max(mnth_sar_sf$TotSARarea_val)
   print(paste('Max map value:', max_val))
-  
+  print("category counts:")
+  print(table(mnth_sar_sf$AreaCat))
+#     0  (0–1)  [1–4)  [4–9) [9–16)    ≥16 
+#   282    852    498     83     27     27 SAR area counts
+
   if (borders_str == "ADM3")
     border_col <- "gray" #"#2b2b2b" 
   else if (borders_str == "ADM4")
@@ -133,22 +185,34 @@ total_sar <- function(mnth_sar_sf, borders_str, sar_str, trans) {
   # set map colors to match monthly count plots from PlotEventData.R
   #  scale_color_manual(values = c("ACLED" = "#377eb8", "VIINA" = "#984ea3"))
   # https://www.w3schools.com/colors/colors_picker.asp
-  map_color <- "#662200" # 20% darkness, 45% = #e64d00
+  #map_color <- "#662200" # 20% darkness, 45% = #e64d00
+
+#  RColorBrewer::display.brewer.all(type="seq")
+  brewer_pal <- RColorBrewer::brewer.pal(5, "YlOrBr")
+  names(brewer_pal) <- c("(0–1)", "[1–4)", "[4–9)", "[9–16)", "≥16")
+  brewer_pal <- c("0" = "white", brewer_pal)  # exact zero is white
 
   map_plt <- ggplot(mnth_sar_sf) +
-    geom_sf(aes(fill = TotSARarea_val), color=border_col) +
+#    geom_sf(aes(fill = TotSARarea_val), color=border_col) +
+    geom_sf(aes(fill = AreaCat), color=border_col) +
     #scale_fill_lajolla_c() + # https://r-charts.com/color-palettes/
     geom_sf(data = adm1_sf, fill = NA, color = "#2b2b2b", linewidth = 0.1) +
     geom_sf(data = adm0_sf, fill = NA, color = "#101010", linewidth = 0.4) +
-    scale_fill_gradientn(
+    scale_fill_manual(
+      values = brewer_pal,
+      na.value = "white",
+      drop = FALSE
+    ) +
+#    scale_fill_gradientn(
       #      colors = c("lightgray", map_color), # Light to strong colors
       #colors = c("#f2f2f2", map_color), # Light to strong colors #e6e6e6
-      colors = c("white", map_color), # Light to strong colors #e6e6e6
-      values = scales::rescale(c(0, max_val)),
-      limits = c(0, max_val),  # Force all maps to have the same limits
-      na.value = "white" # Define a color for NA values
-    ) +
-    labs(title = paste(sar_str, "Total Damage Detected"), fill = leg_title) +
+#      colors = c("white", map_color), # Light to strong colors #e6e6e6
+#      values = scales::rescale(c(0, max_val)),
+#      limits = c(0, max_val),  # Force all maps to have the same limits
+#      na.value = "white" # Define a color for NA values
+#    ) +
+#    labs(title = paste(sar_str, "Total Damage Detected"), fill = leg_title) +
+    labs(title = paste(sar_str, "Total Damage Detected"), fill = leg_label) +
     theme_minimal() +
     theme(
       panel.background = element_rect(fill = "white", color = NA), # White background for the map
@@ -161,6 +225,9 @@ total_sar <- function(mnth_sar_sf, borders_str, sar_str, trans) {
       legend.position.inside = c(0.05, 0.05),
       legend.justification = c("left", "bottom"),
       legend.background = element_rect(fill = "white", color = "black", linewidth = 0.3),
+#      legend.text = element_text(size = 9),
+#      legend.title = element_text(size = 10),
+#      legend.key.size = unit(0.95, "lines"),
       axis.title = element_blank(),
       axis.text = element_blank(), # remove the lat/lon text labels
       axis.ticks = element_blank()
@@ -338,5 +405,5 @@ normADM_SAR_Jamon <- function(borders_str) { # borders_str <- "ADM4"
 }
 
 #adm3_sar_norm <- normADM_SAR_Jamon("ADM3")
-#adm4_sar_norm <- normADM_SAR_Jamon("ADM4")
+  #adm4_sar_norm <- normADM_SAR_Jamon("ADM4")
 

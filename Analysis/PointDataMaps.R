@@ -147,8 +147,8 @@ if (FALSE) {
   inFile <- file.path(analysisDir, "ADM3_VIINA/ukr_adm3_viina.shp")
   adm3_viina <- st_read(inFile)
   colnames(adm3_viina)
-  print(sum(adm3_viina$m03_2022))
-  print(sum(adm3_viina$m04_2023))
+  print(sum(adm3_viina$m03_2022)) # 4792
+  print(sum(adm3_viina$m04_2023)) # 1958
   inFile <- file.path(analysisDir, "ADM3_ACLED/ukr_adm3_acled.shp")
   adm3_acled <- st_read(inFile)
   colnames(adm3_acled)
@@ -254,14 +254,15 @@ total_events_km2 <- function(mnth_cnts_sf, borders_str, events_str, log_offset =
   # set map colors to match monthly count plots from PlotEventData.R
   #  scale_color_manual(values = c("ACLED" = "#377eb8", "VIINA" = "#984ea3"))
   # https://www.w3schools.com/colors/colors_picker.asp
+#  RColorBrewer::display.brewer.all(type="seq")
   if (events_str == "ACLED") {
     #map_color <- "#17364f" # 20% of original color: "#377eb8"
     #brewer_pal <- "Blues"
-    brewer_pal <- RColorBrewer::brewer.pal(5, "Blues")
+    brewer_pal <- RColorBrewer::brewer.pal(5, "GnBu") # "Blues"
   } else if (events_str == "VIINA") {
     #map_color <- "#402145" # 20% of original color: "#984ea3"
 #    brewer_pal <- "Purples"
-    brewer_pal <- RColorBrewer::brewer.pal(5, "Purples")
+    brewer_pal <- RColorBrewer::brewer.pal(5, "BuPu") # Purples
   } else
     print(paste("ERROR: unexpected events_str", events_str))
   names(brewer_pal) <- c("(0–1)", "[1–4)", "[4–9)", "[9–16)", "≥16")
@@ -321,7 +322,7 @@ total_events_km2 <- function(mnth_cnts_sf, borders_str, events_str, log_offset =
   return(map_plt)
 }
 
-# square root transform
+# square root categories
 viina_plt <- total_events_km2(adm3_viina, "ADM3", "VIINA", log_offset = 10)
 acled_plt <- total_events_km2(adm3_acled, "ADM3", "ACLED", log_offset = 10)
 
@@ -359,8 +360,8 @@ print(full_file)
 ggsave(full_file, plot = final_plot, width = 7, height = 9)
 
 
-total_events_km2(adm3_viina, "ADM3", "VIINA", log_offset = FALSE)
-total_events_km2(adm3_acled, "ADM3", "ACLED", log_offset = FALSE)
+#total_events_km2(adm3_viina, "ADM3", "VIINA", log_offset = FALSE)
+#total_events_km2(adm3_acled, "ADM3", "ACLED", log_offset = FALSE)
 
 if (FALSE) {
   total_events_km2(adm3_viina, "ADM3", "VIINA", log_offset = 0.1)
