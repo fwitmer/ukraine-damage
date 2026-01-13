@@ -150,6 +150,7 @@ total_sar <- function(mnth_sar_sf, borders_str, sar_str, trans) {
     )
     mnth_sar_sf$AreaCat <- map_labels[mnth_sar_sf$AreaCat]
     labels <- c("0", "(0–1)", "[1–4)", "[4–9)", "[9–16)", "≥16")
+    #labels <- unname(map_labels) # TODO: should be able to use this line & delete above line
 
     # convert to factor with your custom labels in the correct order
     mnth_sar_sf$AreaCat <- factor(
@@ -190,6 +191,7 @@ total_sar <- function(mnth_sar_sf, borders_str, sar_str, trans) {
 #  RColorBrewer::display.brewer.all(type="seq")
   brewer_pal <- RColorBrewer::brewer.pal(5, "YlOrBr")
   names(brewer_pal) <- c("(0–1)", "[1–4)", "[4–9)", "[9–16)", "≥16")
+  #names(brewer_pal) <- labels[-1] # TODO: drop the above line and replace with this one
   brewer_pal <- c("0" = "white", brewer_pal)  # exact zero is white
 
   map_plt <- ggplot(mnth_sar_sf) +

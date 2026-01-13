@@ -16,16 +16,19 @@
 #
 ##########################################################################
 
-library(sf)
-library(dplyr) 
-library(tidyr) # for pivot_longer
-library(stringr) # for str_replace_all
-library(ggplot2)
-
-baseDir <- "D:/Users/witmer/Documents/UAA/Research/Conflict_RS/Ukraine"
+#baseDir <- "D:/Users/witmer/Documents/UAA/Research/Conflict_RS/Ukraine"
+baseDir <- getwd()
 analysisDir <- file.path(baseDir, "Analysis/")
 if (!dir.exists(analysisDir))
   print(paste("ERROR invalid analysisDir", analysisDir))
+
+source(file.path(baseDir, "LoadInstallLib.R"))
+load_install_lib("sf")
+load_install_lib("dplyr")
+load_install_lib("ggplot2")
+load_install_lib("tidyr") # for pivot_longer
+load_install_lib("stringr") # for str_replace_all
+
 
 SAR_Dir <- file.path(baseDir, "SAR_GEE/Monthly_Damage/")
 if (!dir.exists(SAR_Dir))
@@ -33,9 +36,9 @@ if (!dir.exists(SAR_Dir))
 
 # INSTRUCTIONS: set the transformation here
 #     to support "CompQuantile_" and "CompLog_" output directories
-trans <- "Quantile"
+#trans <- "Quantile" # BROKEN?
 #trans <- "Log"
-#trans <- "Sqrt"
+trans <- "Sqrt"
 #trans <- "Raw"
 folder <- paste0("Comp", trans, "_ADM3")
 outDir <- file.path(analysisDir, folder)
@@ -305,6 +308,56 @@ total_comp_map <- function(adm_comp, trans, borders_str) {
              (max(!!sym(sum_var)) - min(!!sym(sum_var))) * 100)
   print(paste("Range of ", sum_var, "after 0-100 normalization:"))
   print(range(adm_comp_sf[[sum_var]]))
+  
+#  browser()
+#  hist(adm_comp_sf[[sum_var]])
+  sum(adm_comp_sf[[sum_var]] == 0) # 217
+  sum(adm_comp_sf[[sum_var]] == 100) # 1
+  sum(adm_comp_sf[[sum_var]] >= 80) # 24 --> 1?
+  sum(adm_comp_sf[[sum_var]] > 0) # 1552
+  # already applied sqrt transform to data, so use a linear scale, but separate out 0
+  # 0, (0-20), [20-40), [40-60), [60-80), [80-100]
+  breaks <- c(0, 20, 40, 60, 80, Inf)
+
+  # strictly positive bins
+  adm_comp_sf$ScoreCat <- cut(
+    adm_comp_sf[[sum_var]],
+    breaks = breaks,
+    include.lowest = TRUE,
+    right = FALSE
+  ) %>% as.character()  # convert to character so we can relabel
+  # add in zero
+  adm_comp_sf$ScoreCat[abs(adm_comp_sf[[sum_var]]) < .Machine$double.eps] <- "0"
+
+  print("category counts:")
+  print(table(adm_comp_sf$ScoreCat))
+
+  map_labels <- c(
+    "0"        = "0",
+    "[0,20)"    = "(0-20)",
+    "[20,40)"  = "[20-40)",
+    "[40,60)"  = "[40-60)",
+    "[60,80)"  = "[60-80)",
+    "[80,Inf]" = "[80-100]"
+  )
+  adm_comp_sf$ScoreCat <- map_labels[adm_comp_sf$ScoreCat]
+  # extract values from map_labels object
+  labels <- unname(map_labels)
+
+  # convert to factor with your custom labels in the correct order
+  adm_comp_sf$ScoreCat <- factor(
+    adm_comp_sf$ScoreCat,
+    levels = labels,
+    ordered = TRUE
+  )
+
+  leg_label <- expression("Area (%)")
+  file_mod  <- "_cat"
+
+  print("category counts:")
+  print(table(adm_comp_sf$ScoreCat))
+
+#  browser()
 
   if (borders_str == "ADM3")
     border_col <- "gray" #"#2b2b2b" 
@@ -313,24 +366,37 @@ total_comp_map <- function(adm_comp, trans, borders_str) {
   else
     print(paste("ERROR: unexpected borders_str", borders_str))
 
-  max_val <- 100
-  print(paste("max composite value:", max_val))
-  
+#  max_val <- 100
+#  print(paste("max composite value:", max_val))
+
+#  RColorBrewer::display.brewer.all(type="seq")
+  brewer_pal <- RColorBrewer::brewer.pal(5, "OrRd")
+#  brewer_pal <- RColorBrewer::brewer.pal(5, "YlOrRd") # too much yellow
+  names(brewer_pal) <- labels[-1]   # drop first label
+  brewer_pal <- c("0" = "white", brewer_pal)  # exact zero is white
+
   # map adm_comp_sf[[sum_var]] & save to file
   gg_plt <- ggplot(adm_comp_sf) +
-    geom_sf(aes(fill = !!sym(sum_var)), color=border_col) +
+  #  geom_sf(aes(fill = !!sym(sum_var)), color=border_col) +
+    geom_sf(aes(fill = ScoreCat), color=border_col) +
     #scale_fill_lajolla_c() + # https://r-charts.com/color-palettes/
     geom_sf(data = adm1_sf, fill = NA, color = "#2b2b2b", linewidth = 0.1) +
     geom_sf(data = adm0_sf, fill = NA, color = "#101010", linewidth = 0.4) +
-    scale_fill_gradientn(
+    scale_fill_manual(
+      values = brewer_pal,
+      na.value = "white",
+      drop = FALSE
+    ) +
+#    scale_fill_gradientn(
 #      colors = c("lightgray", "darkred"), # Light to strong colors
 #      colors = c("#e5e5e5", "#7d0112"), # "#3a0c24"
-      colors = c("white", "#7d0112"),
-      values = scales::rescale(c(0, max_val)),
-      limits = c(0, max_val),  # Force all maps to have the same limits
-      na.value = "white" # Define a color for NA values
-    ) +
-    labs(title = paste0("Composite Damage Score (",trans,"): All Months"), fill = "Value") +
+#      colors = c("white", "#7d0112"),
+#      values = scales::rescale(c(0, max_val)),
+#      limits = c(0, max_val),  # Force all maps to have the same limits
+#      na.value = "white" # Define a color for NA values
+#    ) +
+#    labs(title = paste0("Composite Damage Score (",trans,"): All Months"), fill = "Value") +
+    labs(title = paste0("Composite Damage Score for All Months"), fill = "Value") +
     theme_minimal() +
     theme(
       panel.background = element_rect(fill = "white", color = NA), # White background for the map
@@ -350,7 +416,7 @@ total_comp_map <- function(adm_comp, trans, borders_str) {
   
   # Save the plot to a PNG file
   #print(gg_plt)
-  fname <- paste0(comp_prefix, borders_str, "_AllMonths", ".png")
+  fname <- paste0(comp_prefix, borders_str, "_AllMonths", file_mod, ".png")
   print(paste("writing file", fname))
   folder <- paste0("Comp", trans, "_", borders_str)
   outDir <- file.path(analysisDir, folder)
