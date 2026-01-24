@@ -1,4 +1,3 @@
-*.csv
 *.ini
 *.RData
 *.Rproj
@@ -52,13 +51,16 @@ Borders/FixADM4_Geo.R
 GHS_Mask
 ACLED_Data/LoadACLED_11May2025.R
 ACLED_Data/ExploreACLED_OldDirs.R
+ACLED_Data/*.csv
 VIINA_Data/LoadVIINA_10Dec2024.R
+VIINA_Data/*.csv
 SAR_GEE/SAR_DamageTiles
 SAR_GEE/SAR_MonthlyPlot_11May2025.R
 SAR_GEE/SAR_MonthlyPlot_9May2025.R
 SAR_GEE/*.tif
 SAR_GEE/ADM3_4_Overlay
 SAR_GEE/Monthly_Damage/SAR_Damage_per_monthADM3_NotAdj.png
+SAR_GEE/Monthly_Damage/*.csv
 SAR_GEE/MergeSAR_DamageTiles.R
 SAR_GEE/SAR_PolyAgg.R
 SAR_GEE/SAR_PolyAgg.py

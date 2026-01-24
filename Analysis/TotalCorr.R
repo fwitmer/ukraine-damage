@@ -3,20 +3,15 @@
 #
 #	combine violent event point data and SAR damage data in wide format
 #   to calculate total correlation coefficients
-#   aggregated at both ADM3 and ADM4 borders 
+#   aggregated only to ADM3 borders 
 #
 # border data source: Humanitarian Data Exchange, OCHA
 #   https://data.humdata.org/dataset/cod-ab-ukr
 #
 ##########################################################################
 
-library(sf)
-library(dplyr) 
-library(tidyr) # for pivot_longer
-library(stringr) # for str_replace_all
-library(ggplot2)
-
-baseDir <- "D:/Users/witmer/Documents/UAA/Research/Conflict_RS/Ukraine"
+#baseDir <- "D:/Users/witmer/Documents/UAA/Research/Conflict_RS/Ukraine"
+baseDir <- getwd()
 analysisDir <- file.path(baseDir, "Analysis/")
 if (!dir.exists(analysisDir))
   print(paste("ERROR invalid analysisDir", analysisDir))
@@ -25,11 +20,19 @@ SAR_Dir <- file.path(baseDir, "SAR_GEE/Monthly_Damage/")
 if (!dir.exists(SAR_Dir))
   print(paste("ERROR invalid SAR_Dir", SAR_Dir))
 
+source(file.path(baseDir, "LoadInstallLib.R"))
+load_install_lib("sf")
+load_install_lib("dplyr")
+load_install_lib("ggplot2")
+load_install_lib("tidyr") # for pivot_longer
+load_install_lib("stringr") # for str_replace_all
+
 # load functions to read/join monthly event data & SAR data
 source(file.path(analysisDir, "ReadMonthlyData.R"))
 
 borders_str <- "ADM3"
 adm3_wide <- join_wide(baseDir, SAR_DIR, borders_str, GHSnorm = TRUE)
+
 
 ##########################
 # calculate sums for each variable
@@ -91,4 +94,46 @@ library(energy)
 cor_df["VIINA-SAR", "distance"] <- dcor(wide_totals$viina, wide_totals$SAR)
 cor_df["ACLED-SAR", "distance"] <- dcor(wide_totals$acled, wide_totals$SAR)
 cor_df["VIINA-ACLED", "distance"] <- dcor(wide_totals$viina, wide_totals$acled)
+
+## TODO: move this code to BuildLongDF.R
+#    & maybe rename that file to SpaceTimeCorr.R???
+##############
+# calculate regression model with a space-time lag & explore monthly residuals
+##############
+adm3_fname <- file.path(baseDir, "Borders/ukr_admbnda_adm3_sspe_20240416.shp")
+adm3_sf <- st_read(adm3_fname)
+
+# join adm3_wide to borders
+ID_var <- paste0(borders_str, "_PCODE")
+adm_evnts_small <- adm3_sf[, c(ID_var, "geometry")]
+adm_wide_sf <- left_join(adm_evnts_small, adm3_wide, by = ID_var)
+colnames(adm_wide_sf)
+
+# calculate 1st order spatial lag
+load_install_lib("spdep")
+
+adm_wide_sf <- st_make_valid(adm_wide_sf) # ensure valid geometries
+nb <- poly2nb(adm_wide_sf, queen = TRUE) # queen contiguity neighbors
+print(nb)
+lw <- nb2listw(nb, style = "W", zero.policy = TRUE) # row-standardized weights
+print(lw)
+
+acled_cols <- grep("^ACLED_", names(adm_wide_sf), value = TRUE)
+viina_cols <- grep("^VIINA_", names(adm_wide_sf), value = TRUE)
+sar_cols   <- grep("^SAR_",   names(adm_wide_sf), value = TRUE)
+
+spatial_lag_cols <- function(sf_obj, cols, lw, suffix = "_slag") {
+  for (var_name in cols) {
+    sf_obj[[paste0(var_name, suffix)]] <-
+      lag.listw(lw, sf_obj[[var_name]], zero.policy = TRUE)
+  }
+  sf_obj
+}
+
+adm_wide_sf <- adm_wide_sf |>
+  spatial_lag_cols(acled_cols, lw, "_slag") |>
+  spatial_lag_cols(viina_cols, lw, "_slag") |>
+  spatial_lag_cols(sar_cols,   lw, "_slag")
+
+head(adm_wide_sf)
 

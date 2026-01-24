@@ -11,6 +11,7 @@
 #   https://data.humdata.org/dataset/cod-ab-ukr
 #
 # TODO: would probably be better to have this read from the raw data & not the processed shapefiles/csv files
+# TODO: rename this file to something like LongCorrelations.R
 ##########################################################################
 
 library(sf)
