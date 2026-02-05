@@ -66,6 +66,8 @@ read_events <- function(baseDir, borders_str, events_str) {
   adm_evnts_subset <- joined_ghs %>%
     select(all_of(c(ID_var, "AREA_SQKM", "GHS_urban")), starts_with(events_str))
   #head(adm_evnts_subset)
+
+  # TODO: normalize counts by AREA_SQKM here and remove duplicate code elsewhere...?
   
   return(adm_evnts_subset)
 }

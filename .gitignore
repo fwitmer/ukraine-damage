@@ -24,19 +24,14 @@ Analysis/CompQuantile_ADM3/*.png
 Analysis/CompQuantile_ADM3/OldNames
 Analysis/CompRaw_ADM3/*.png
 Analysis/BuildLongDF_25Apr2025.R
-Analysis/CategoryMaps_17Mar2025.R
-Analysis/CategoryMaps_19May2025.R
+Analysis/CategoryMaps_*.R
 Analysis/CompositeMaps_12May2025.R
 Analysis/MonthlyCorr_17Jan2025.R
 Analysis/MonthlyCorr.R
 Analysis/mnth_cor_ADM3.png
-Analysis/PointDataMaps_12May2025.R
-Analysis/PointDataMaps_29Dec2025.R
-Analysis/ReadMonthlyData_9May2025.R
-Analysis/ReadMonthlyData_12May2025.R
-Analysis/SAR_DataMaps_12May2025.R
-Analysis/SAR_DataMaps_19May2025.R
-Analysis/SAR_DataMaps_30Dec2025.R
+Analysis/PointDataMaps_*.R
+Analysis/ReadMonthlyData_*.R
+Analysis/SAR_DataMaps_*.R
 Analysis/MonthlyPlot/PlotEventsAndSAR_log.txt
 Analysis/Correlations/ADM3_corrNorm_nonZeroSubset.png
 Analysis/MonthCountPlots/(VIINA or ACLED)-SAR_MnthCnts.png

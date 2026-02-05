@@ -155,6 +155,13 @@ if (FALSE) {
 }
 
 #############################
+# add $CntsCat to the given sf object
+#############################
+set_count_categories(mnth_cnts_sf) {
+  # TODO: write this to return modified mnth_cnts_sf object plus map_labels as well?
+}
+
+#############################
 # write total events/km2 map to disk
 #   requires global 'analysisDir'
 #   requires global 'adm1_sf'
@@ -197,6 +204,8 @@ total_events_km2 <- function(mnth_cnts_sf, borders_str, events_str, log_offset =
     #file_mod <- "_sqrt"
     #mnth_cnts_sf$CntsVar <- sqrt(mnth_cnts_sf$CntsKm2)
     
+    set_count_categories(mnth_cnts_sf)
+
     # ---- sqrt categorical bins ----
     breaks <- c(0, 1, 4, 9, 16, Inf)
 
@@ -220,7 +229,8 @@ total_events_km2 <- function(mnth_cnts_sf, borders_str, events_str, log_offset =
       "[16,Inf]" = "≥16"
     )
     mnth_cnts_sf$CntsCat <- map_labels[mnth_cnts_sf$CntsCat]
-    labels <- c("0", "(0–1)", "[1–4)", "[4–9)", "[9–16)", "≥16")
+    #labels <- c("0", "(0–1)", "[1–4)", "[4–9)", "[9–16)", "≥16")
+    labels <- unname(map_labels)
 
     # convert to factor with your custom labels in the correct order
     mnth_cnts_sf$CntsCat <- factor(
@@ -265,7 +275,7 @@ total_events_km2 <- function(mnth_cnts_sf, borders_str, events_str, log_offset =
     brewer_pal <- RColorBrewer::brewer.pal(5, "BuPu") # Purples
   } else
     print(paste("ERROR: unexpected events_str", events_str))
-  names(brewer_pal) <- c("(0–1)", "[1–4)", "[4–9)", "[9–16)", "≥16")
+  names(brewer_pal) <- labels[-1]   # drop first label
   brewer_pal <- c("0" = "white", brewer_pal)  # exact zero is white
   
   map_plt <- ggplot(mnth_cnts_sf) +
@@ -371,24 +381,16 @@ if (FALSE) {
   total_events_km2(adm3_acled, "ADM3", "ACLED", log_offset = 1)
 }
 
-# TODO: modify the below map generation code to use the same breaks as above
-
 #############################
 # write event count maps to disk for each month
 #   requires global 'analysisDir'
 #   requires global 'adm1_sf'
+# Feb 2026, change trans='sqrt' option to use nonlinear categories, which breaks the other trans options
 #############################
 monthly_pngs <- function(mnth_cnts_sf, borders_str, events_str, trans="counts") {
 
   folder <- paste(borders_str, events_str, sep="_")
   outDir <- file.path(analysisDir , folder)
-  if (!dir.exists(outDir)) {
-    print(paste("creating directory:", outDir))
-    dir.create(outDir)
-  }
-  
-  subfolder <- paste(folder, sep="_", trans)
-  outDir <- file.path(outDir , subfolder)
   if (!dir.exists(outDir)) {
     print(paste("creating directory:", outDir))
     dir.create(outDir)
@@ -416,39 +418,102 @@ monthly_pngs <- function(mnth_cnts_sf, borders_str, events_str, trans="counts") 
       ))
     sf_long <- pivot_longer(adm_evnts_norm, 
                             cols = matches("^m\\d{2}_\\d{4}$"), # "m??_????"
-                            names_to = "Month", values_to = "CntKm2")
-    print(paste("total area of events:", sum(sf_long$CntKm2)))
+                            names_to = "Month", values_to = "CntsKm2")
+    # used to be CntKm2, perhaps intentionally singular since for one month, but change to CntsKm2 for potential future function
+    print(paste("total area of events:", sum(sf_long$CntsKm2)))
     if (trans == "area") {
       #browser()
       leg_label <- "Counts/Km2"
       file_mod <- "_area"
       #colnames(sf_long)
       table(sf_long$Month)
-      sf_long$CntsVar <- sf_long$CntKm2
+      sf_long$CntsVar <- sf_long$CntsKm2
     } else if (trans == "sqrt") {
       leg_label <- "sqrt(Cnts/Km2)"
       file_mod <- "_sqrt"
       #table(sf_long$Month)
-      sf_long$CntsVar <- sqrt(sf_long$CntKm2)
+      sf_long$CntsVar <- sqrt(sf_long$CntsKm2)
+    } else if (trans == "cat") {
+
+      # ---- sqrt categorical bins ----
+      #breaks <- c(0, 1, 4, 9, 16, Inf)
+      breaks <- c(0, 0.1, 0.2, 0.4, 1.0, Inf)
+
+      # strictly positive bins
+      sf_long$CntsCat <- cut(
+        sf_long$CntsKm2,
+        breaks = breaks,
+        include.lowest = TRUE,
+        right = FALSE
+      ) %>% as.character()  # convert to character so we can relabel
+#      browser()
+#      print(table(sf_long$CntsCat))
+
+      # exact zero
+      sf_long$CntsCat[abs(sf_long$CntsKm2) < .Machine$double.eps] <- "0"
+      # left hand side must match cuts from above exactly
+      map_labels <- c(
+        "0"         = "0",
+        "[0,0.1)"   = "(0 - 0.1)",
+        "[0.1,0.2)" = "[0.1 - 0.2)",
+        "[0.2,0.4)" = "[0.2 - 0.4)",
+        "[0.4,1)"   = "[0.4 - 1.0)",
+        "[1,Inf]"   = "≥ 1.0"
+      )
+      bad_levels <- setdiff(unique(sf_long$CntsCat), names(map_labels))
+      if (length(bad_levels) > 0) {
+        stop("Unmapped CntsCat levels:\n", paste(bad_levels, collapse = ", "))
+      }
+      sf_long$CntsCat <- map_labels[sf_long$CntsCat]
+      labels <- unname(map_labels) 
+
+      # convert to factor with your custom labels in the correct order
+      sf_long$CntsCat <- factor(
+        sf_long$CntsCat,
+        levels = labels,
+        ordered = TRUE
+      )
+
+      leg_label <- expression("Total events/km"^2)
+      file_mod  <- "_cat"
+
     } else {
       print("ERROR: unexpected tranformation")
       return(FALSE)
     }
   }
   
-  max_counts <- max(sf_long$CntsVar)
-  print(paste("max value:", max_counts)) # 617
+#  max_counts <- max(sf_long$CntsVar)
+#  print(paste("max value:", max_counts)) # 617
+  print(max(sf_long$CntsKm2)) # 2.77
+  print("category counts:")
+  print(table(sf_long$CntsCat))
+  print(paste("number of NAs should be 0:", sum(is.na(sf_long$CntsCat))))
+  print(nrow(sf_long))
+
+#  subfolder <- paste(folder, sep="_", file_mod)
+  subfolder <- paste(folder, sep="", file_mod)
+  outDir <- file.path(outDir , subfolder)
+  if (!dir.exists(outDir)) {
+    print(paste("creating directory:", outDir))
+    dir.create(outDir)
+  }
   
   # Create a plot for each month and save as a PNG file
   months <- unique(sf_long$Month)  # Get list of unique months
   
-  if (events_str == "ACLED")
-    map_color <- "#17364f" # 20% of original color: "#377eb8"
-  else if (events_str == "VIINA")
-    map_color <- "#402145" # 20% of original color: "#984ea3"
-  else
+  if (events_str == "ACLED") {
+#    map_color <- "#17364f" # 20% of original color: "#377eb8"
+    brewer_pal <- RColorBrewer::brewer.pal(5, "GnBu") # "Blues"
+  } else if (events_str == "VIINA") {
+    #map_color <- "#402145" # 20% of original color: "#984ea3"
+    brewer_pal <- RColorBrewer::brewer.pal(5, "BuPu") # Purples
+  } else
     print(paste("ERROR: unexpected events_str", events_str))
-  
+
+  names(brewer_pal) <- labels[-1]   # drop first label
+  brewer_pal <- c("0" = "white", brewer_pal)  # exact zero is white
+
   if (borders_str == "ADM3")
     border_col <- "gray" #"#2b2b2b" 
   else if (borders_str == "ADM4")
@@ -456,29 +521,130 @@ monthly_pngs <- function(mnth_cnts_sf, borders_str, events_str, trans="counts") 
   else
     print(paste("ERROR: unexpected borders_str", borders_str))
   
+  # timeline bar month setup: convert month strings to Date objects
+  months_date <- as.Date(paste("1", months, sep = "_"), format="%d_m%m_%Y")
+  n_months <- length(months)
+  month_index <- seq_len(n_months)
+  # timeline bar map extent
+  bb <- st_bbox(sf_long)
+  xmin_map <- bb["xmin"]
+  xmax_map <- bb["xmax"]
+  ymin_map <- bb["ymin"]
+  ymax_map <- bb["ymax"]
+  x_range <- xmax_map - xmin_map
+  y_range <- ymax_map - ymin_map
+  # timeline location at bottom center of map
+  bar_xmin <- xmin_map + 0.15 * x_range
+  bar_xmax <- xmin_map + 0.85 * x_range
+  # height offset above the map
+  bar_height <- 0.015 * y_range
+  bar_gap    <- 0 # 0.02  * y_range
+  bar_ymin <- ymax_map + bar_gap
+  bar_ymax <- bar_ymin + bar_height
+  #bar_ymin <- ymin_map + 0.94 * y_range
+  #bar_ymax <- ymin_map + 0.96 * y_range
+  pad <- 0.002 * x_range
+  
   for (month in months) {
+    # timeline bar setup
+    i <- which(months == month)   # current month index
+    progress <- i / n_months
+    bar_xprog <- bar_xmin + progress * (bar_xmax - bar_xmin)
+
     # Filter data for the current month
     shp_month <- subset(sf_long, Month == month)
     mnth_obj <- as.Date(paste("1", month, sep="_"), format="%d_m%m_%Y")
     mnth_label <- format(mnth_obj, "%b %Y")
     yr_mnth <- format(mnth_obj, "%Y_%m")
-    print(paste("total num events:", sum(shp_month$CntsVar),"for", mnth_label))
+    #print(paste("total num events:", sum(shp_month$CntsVar),"for", mnth_label))
+    print(paste("total events/km2:", sum(shp_month$CntsKm2),"for", mnth_label))
 
     p <- ggplot(shp_month) +
-      geom_sf(aes(fill = CntsVar), color=border_col) +
+      #geom_sf(aes(fill = CntsVar), color=border_col) +
+      geom_sf(aes(fill = CntsCat), color = border_col) +
       #scale_fill_lajolla_c() + # https://r-charts.com/color-palettes/
       geom_sf(data = adm1_sf, fill = NA, color = "#2b2b2b", linewidth = 0.1) +
       geom_sf(data = adm0_sf, fill = NA, color = "#101010", linewidth = 0.4) +
-      scale_fill_gradientn(
-        colors = c("#f2f2f2", map_color),
-        #colors = c("#f2f2f2", "darkred"), # Light to strong colors
-        values = scales::rescale(c(0, max_counts)),
-        limits = c(0, max_counts),  # Force all maps to have the same limits
-        na.value = "white" # Define a color for NA values
+      scale_fill_manual(
+        values = brewer_pal,
+        na.value = "white",
+        drop = FALSE
       ) +
-      labs(title = paste0(events_str, " Events, ", mnth_label), fill = leg_label) +
+#      scale_fill_gradientn(
+#        colors = c("#f2f2f2", map_color),
+#        #colors = c("#f2f2f2", "darkred"), # Light to strong colors
+#        values = scales::rescale(c(0, max_counts)),
+#        limits = c(0, max_counts),  # Force all maps to have the same limits
+#        na.value = "white" # Define a color for NA values
+#      ) +
+#      labs(title = paste0(events_str, " Events, ", mnth_label), fill = leg_label) +
+      labs(title = paste0(events_str, " Events"), fill = leg_label) +
+#      labs(fill = leg_label) +
+
+  # timeline bar outline (drawn once, always full length)
+  annotate(
+    "rect",
+    xmin = bar_xmin, xmax = bar_xmax,
+    ymin = bar_ymin, ymax = bar_ymax,
+    fill = NA,
+    color = "black",
+    linewidth = 0.3
+  ) +
+  # timeline bar background fill
+  annotate(
+    "rect",
+    xmin = bar_xmin, xmax = bar_xmax,
+    ymin = bar_ymin, ymax = bar_ymax,
+    fill = "grey90",
+    color = NA
+  ) +
+  # timeline bar fill
+#  annotate("rect", xmin = bar_xmin, xmax = bar_xprog,ymin = bar_ymin, ymax = bar_ymax, fill = "grey15", color = NA ) +     
+annotate(
+  "rect",
+  xmin = bar_xmin + pad,
+  xmax = bar_xprog - pad,
+  ymin = bar_ymin + 0.15 * bar_height,
+  ymax = bar_ymax - 0.15 * bar_height,
+  fill = "grey15",
+  color = NA
+) +      
+  # timeline bar start & end months
+  annotate(
+    "text",
+    x = bar_xmin,
+    y = bar_ymax + 0.012 * y_range,
+    label = format(min(months_date), "%b %Y"),
+    hjust = 0,
+    size = 3
+  ) +
+  annotate(
+    "text",
+    x = bar_xmax,
+    y = bar_ymax + 0.012 * y_range,
+    label = format(max(months_date), "%b %Y"),
+    hjust = 1,
+    size = 3
+  ) +
+  # timeline bar moving month label
+  annotate(
+    "text",
+    x = bar_xprog,
+    y = bar_ymin - 0.01 * y_range,
+    label = mnth_label,
+    size = 3,
+    vjust = 1
+  ) +
+  coord_sf(
+    xlim = c(xmin_map, xmax_map),
+    ylim = c(ymin_map, ymax_map),
+    expand = FALSE,
+    clip = "off"
+  ) +
+      
       theme_minimal() +
       theme(
+    plot.margin = margin(t = 25, r = 10, b = 10, l = 10),
         panel.background = element_rect(fill = "white", color = NA), # White background for the map
         plot.background = element_rect(fill = "white", color = NA),  # White background for the entire plot
         panel.grid = element_blank(),  # Remove gridlines
@@ -490,6 +656,12 @@ monthly_pngs <- function(mnth_cnts_sf, borders_str, events_str, trans="counts") 
         legend.position.inside = c(0.05, 0.05),
         legend.justification = c("left", "bottom"),
         legend.background = element_rect(fill = "white", color = "black", linewidth = 0.3),
+        legend.text = element_text(size = 9),
+        legend.title = element_text(size = 10),
+        legend.key.size = unit(0.95, "lines"),
+        axis.title = element_blank(),
+        axis.text = element_blank(), # remove the lat/lon text labels
+        axis.ticks = element_blank()
       )
     
     # Save the plot to a PNG file w/ yr_mnth for correct sorting
@@ -499,35 +671,45 @@ monthly_pngs <- function(mnth_cnts_sf, borders_str, events_str, trans="counts") 
   }
 }
 
-monthly_pngs(adm3_viina, "ADM3", "VIINA", trans="counts")
-monthly_pngs(adm3_acled, "ADM3", "ACLED", trans="counts")
-  
-# sqrt representation is better
-#monthly_pngs(adm3_viina, "ADM3", "VIINA", trans="sqrt")
-monthly_pngs(adm3_acled, "ADM3", "ACLED", trans="sqrt")
+# change to non-linear categories
+monthly_pngs(adm3_viina, "ADM3", "VIINA", trans="cat")
+monthly_pngs(adm3_acled, "ADM3", "ACLED", trans="cat")
 
 if (FALSE) {
+  # sqrt representation is better than raw counts
+  monthly_pngs(adm3_viina, "ADM3", "VIINA", trans="sqrt")
+  monthly_pngs(adm3_acled, "ADM3", "ACLED", trans="sqrt")
+
+  monthly_pngs(adm3_viina, "ADM3", "VIINA", trans="counts")
+  monthly_pngs(adm3_acled, "ADM3", "ACLED", trans="counts")
+  
   # a few small areas dominate these maps resulting in not much variation over space
   monthly_pngs(adm3_viina, "ADM3", "VIINA", trans="area")
   monthly_pngs(adm3_acled, "ADM3", "ACLED", trans="area")
+
+  #monthly_pngs(adm4_viina, "ADM4", "VIINA")
+  #monthly_pngs(adm4_acled, "ADM4", "ACLED")
 }
 
-#monthly_pngs(adm4_viina, "ADM4", "VIINA")
-#monthly_pngs(adm4_acled, "ADM4", "ACLED")
 
-
+###########
+# combine monthly png files into a single gif
+###########
 source(file.path(analysisDir, "MakeGifFunction.R"))
 
-# INSTRUCTIONS: generate gifs, then modify filename and move to subdirectory (e.g. 'sqrt', 'area')
-make_gif(analysisDir , "ADM3_VIINA/ADM3_VIINA_sqrt", prefix="ADM3_VIINA_sqrt")
-make_gif(analysisDir , "ADM3_ACLED/ADM3_ACLED_sqrt", prefix="ADM3_ACLED_sqrt")
+make_gif(analysisDir , "ADM3_VIINA/ADM3_VIINA_cat", prefix="ADM3_VIINA_cat")
+make_gif(analysisDir , "ADM3_ACLED/ADM3_ACLED_cat", prefix="ADM3_ACLED_cat")
 
-make_gif(analysisDir , "ADM3_VIINA/ADM3_VIINA_counts", prefix="ADM3_VIINA_counts")
-make_gif(analysisDir , "ADM3_ACLED/ADM3_ACLED_counts", prefix="ADM3_ACLED_counts")
+if (FALSE) {
+  make_gif(analysisDir , "ADM3_VIINA/ADM3_VIINA_sqrt", prefix="ADM3_VIINA_sqrt")
+  make_gif(analysisDir , "ADM3_ACLED/ADM3_ACLED_sqrt", prefix="ADM3_ACLED_sqrt")
 
-make_gif(analysisDir , paste("ADM4", "VIINA", sep="_"))
-make_gif(analysisDir , paste("ADM4", "ACLED", sep="_"))
+  make_gif(analysisDir , "ADM3_VIINA/ADM3_VIINA_counts", prefix="ADM3_VIINA_counts")
+  make_gif(analysisDir , "ADM3_ACLED/ADM3_ACLED_counts", prefix="ADM3_ACLED_counts")
 
+  make_gif(analysisDir , paste("ADM4", "VIINA", sep="_"))
+  make_gif(analysisDir , paste("ADM4", "ACLED", sep="_"))
+}
 
 ####################
 if (FALSE) {
