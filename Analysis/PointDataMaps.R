@@ -644,7 +644,7 @@ annotate(
       
       theme_minimal() +
       theme(
-    plot.margin = margin(t = 25, r = 10, b = 10, l = 10),
+    plot.margin = margin(t = 25, r = 10, b = 10, l = 10), # for timeline bar
         panel.background = element_rect(fill = "white", color = NA), # White background for the map
         plot.background = element_rect(fill = "white", color = NA),  # White background for the entire plot
         panel.grid = element_blank(),  # Remove gridlines
