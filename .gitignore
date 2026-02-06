@@ -20,10 +20,10 @@ Analysis/ADM3_ACLED/*/*.png
 Analysis/ADM3_VIINA/*/*.png
 Analysis/ADM3_SAR/*.png
 Analysis/ADM3_SAR/ADM3_SAR_OLD.gif
-Analysis/CompLog_ADM3/*.png
-Analysis/CompQuantile_ADM3/*.png
+Analysis/CompLog_ADM3
+Analysis/CompQuantile_ADM3
 Analysis/CompQuantile_ADM3/OldNames
-Analysis/CompRaw_ADM3/*.png
+Analysis/CompRaw_ADM3
 Analysis/BuildLongDF_25Apr2025.R
 Analysis/CategoryMaps_*.R
 Analysis/CompositeMaps_12May2025.R
@@ -34,6 +34,7 @@ Analysis/PointDataMaps_*.R
 Analysis/ReadMonthlyData_*.R
 Analysis/SAR_DataMaps_*.R
 Analysis/MonthlyPlot/PlotEventsAndSAR_log.txt
+Analysis/MonthlyPlot/EventsAndSAR_Mnth_*
 Analysis/Correlations/ADM3_corrNorm_nonZeroSubset.png
 Analysis/MonthCountPlots/(VIINA or ACLED)-SAR_MnthCnts.png
 Analysis/MonthCountPlots/(VIINA or ACLED)-SAR_MnthCntsArea.png
@@ -50,6 +51,9 @@ ACLED_Data/LoadACLED_11May2025.R
 ACLED_Data/ExploreACLED_OldDirs.R
 ACLED_Data/*.csv
 VIINA_Data/LoadVIINA_10Dec2024.R
+VIINA_Data/Bombing_events_per_month.png
+VIINA_Data/VIINA_events_per_month_AllGEO.png
+VIINA_Data/*5.2024.png
 VIINA_Data/*.csv
 SAR_GEE/SAR_DamageTiles
 SAR_GEE/SAR_MonthlyPlot_11May2025.R
@@ -57,6 +61,9 @@ SAR_GEE/SAR_MonthlyPlot_9May2025.R
 SAR_GEE/*.tif
 SAR_GEE/ADM3_4_Overlay
 SAR_GEE/Monthly_Damage/SAR_Damage_per_monthADM3_NotAdj.png
+SAR_GEE/Monthly_Damage/SAR_Damage_per_monthADM3_Possible.png
+SAR_GEE/Monthly_Damage/SAR_Damage_per_monthADM3_blue.png
+SAR_GEE/Monthly_Damage/SAR_Damage_per_monthADM3.png
 SAR_GEE/Monthly_Damage/*.csv
 SAR_GEE/MergeSAR_DamageTiles.R
 SAR_GEE/SAR_PolyAgg.R
