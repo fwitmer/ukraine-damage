@@ -64,6 +64,7 @@ SAR_GEE/Monthly_Damage/SAR_Damage_per_monthADM3_NotAdj.png
 SAR_GEE/Monthly_Damage/SAR_Damage_per_monthADM3_Possible.png
 SAR_GEE/Monthly_Damage/SAR_Damage_per_monthADM3_blue.png
 SAR_GEE/Monthly_Damage/SAR_Damage_per_monthADM3.png
+SAR_GEE/Monthly_Damage/SAR_HistGeoSubset.png
 SAR_GEE/Monthly_Damage/*.csv
 SAR_GEE/MergeSAR_DamageTiles.R
 SAR_GEE/SAR_PolyAgg.R
