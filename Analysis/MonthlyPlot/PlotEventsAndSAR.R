@@ -62,7 +62,8 @@ plt <- ggplot(plot_data, aes(x = month, y = value, color = source, linetype = so
   scale_linetype_manual(values = c("ACLED" = "solid", "VIINA" = "solid", "SAR Damage" = "dashed")) +
   labs(x = "Month", title = "Event Counts and SAR Damage by Month") +
 #  theme_minimal() +
-  theme_minimal(base_size = 14) +
+#  theme_minimal(base_size = 14) +
+  theme_minimal(base_size = 12) +
   theme(
     panel.background = element_rect(fill = "white"),
     plot.background = element_rect(fill = "white"),
@@ -75,11 +76,16 @@ plt <- ggplot(plot_data, aes(x = month, y = value, color = source, linetype = so
     
     # Correct legend positioning for ggplot2 3.5.0+
     legend.position = "inside",
-    legend.position.inside = c(0.96, 0.96),
+    legend.position.inside = c(0.99, 0.98),
     legend.justification = c("right", "top"),
     legend.background = element_rect(fill = "white", color = "black", linewidth = 0.3),
 #    legend.background = element_rect(fill = "white", color = "gray"),
-    legend.title = element_blank() # no legend title
+    legend.title = element_blank(), # no legend title
+    legend.text = element_text(size = 11),
+    legend.key.size = unit(0.95, "lines"),
+    legend.key.width = unit(2.0, "lines"),
+    legend.spacing.y = unit(0.1, "lines"),
+    legend.margin = margin(3, 4, 3, 4)
   ) + 
   scale_x_date(
     limits = range(plot_data$month),
@@ -105,7 +111,7 @@ if (FALSE) {
 fname <- "WitmerFigure1.tif"
 full_file <- file.path(plotDir, fname)
 print(full_file)
-#ggsave(full_file, plot = plt, width = 7, height = 4.2, dpi = 600, compression = "lzw")
-ggsave(full_file, plot = plt, width = 9, height = 5.4, dpi = 600, compression = "lzw")
+ggsave(full_file, plot = plt, width = 7, height = 4.2, dpi = 600, compression = "lzw")
+#ggsave(full_file, plot = plt, width = 9, height = 5.4, dpi = 600, compression = "lzw")
 
 
