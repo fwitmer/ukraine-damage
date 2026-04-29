@@ -226,9 +226,9 @@ total_sar <- function(mnth_sar_sf, borders_str, sar_str, trans) {
       legend.position.inside = c(0.05, 0.05),
       legend.justification = c("left", "bottom"),
       legend.background = element_rect(fill = "white", color = "black", linewidth = 0.3),
-#      legend.text = element_text(size = 9),
-#      legend.title = element_text(size = 10),
-#      legend.key.size = unit(0.95, "lines"),
+      legend.text = element_text(size = 10),
+      legend.title = element_text(size = 11),
+      legend.key.size = unit(1.0, "lines"),
       axis.title = element_blank(),
       axis.text = element_blank(), # remove the lat/lon text labels
       axis.ticks = element_blank()
@@ -240,10 +240,16 @@ total_sar <- function(mnth_sar_sf, borders_str, sar_str, trans) {
     print(paste("creating directory:", outDir))
     dir.create(outDir)
   }
-  png_filename <- paste0(borders_str, "_",sar_str,"_TotSARMap", trans, ".png")
-  full_file <- file.path(outDir, png_filename)
-  print(full_file)
-  ggsave(full_file, plot = map_plt, width = 8, height = 6)
+  if (FALSE) {
+    png_filename <- paste0(borders_str, "_",sar_str,"_TotSARMap", trans, ".png")
+    full_file <- file.path(outDir, png_filename)
+    print(full_file)
+    ggsave(full_file, plot = map_plt, width = 8, height = 6)
+  } else {
+    full_file <- file.path(outDir, "WitmerFigure4.tif")
+    print(full_file)
+    ggsave(full_file, plot = map_plt, width = 7, height = 5, dpi=600, compression="lzw")
+  }
   
 }
 
