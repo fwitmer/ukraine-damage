@@ -5,14 +5,16 @@
 #
 ##########################################################################
 
-library(dplyr)
-library(ggplot2)
-#library(tidyr)
+#baseDir <- "D:/Users/witmer/Documents/UAA/Research/Conflict_RS/Ukraine"
+baseDir <- getwd()
 
-baseDir <- "D:/Users/witmer/Documents/UAA/Research/Conflict_RS/Ukraine"
 analysisDir <- file.path(baseDir, "Analysis/")
 if (!dir.exists(analysisDir))
   print(paste("ERROR invalid analysisDir", analysisDir))
+
+source(file.path(baseDir, "LoadInstallLib.R"))
+load_install_lib("dplyr")
+load_install_lib("ggplot2")
 
 # load functions to read/join monthly event data & SAR data
 source(file.path(analysisDir, "ReadMonthlyData.R"))
@@ -73,7 +75,7 @@ plt <- ggplot(plot_data, aes(x = month, y = value, color = source, linetype = so
     
     # Correct legend positioning for ggplot2 3.5.0+
     legend.position = "inside",
-    legend.position.inside = c(0.95, 0.95),
+    legend.position.inside = c(0.96, 0.96),
     legend.justification = c("right", "top"),
     legend.background = element_rect(fill = "white", color = "black", linewidth = 0.3),
 #    legend.background = element_rect(fill = "white", color = "gray"),
@@ -92,8 +94,18 @@ if (!dir.exists(plotDir))
   print(paste("ERROR invalid plotDir", plotDir))
 
 print('Saving file to:')
-fname <- "EventsAndSAR_Mnth.png"
+if (FALSE) {
+  fname <- "EventsAndSAR_Mnth.png"
+  full_file <- file.path(plotDir, fname)
+  print(full_file)
+  ggsave(full_file, plot = plt, width = 10, height = 6, dpi = 300)
+}
+
+# final version for publication
+fname <- "WitmerFigure1.tif"
 full_file <- file.path(plotDir, fname)
 print(full_file)
-ggsave(full_file, plot = plt, width = 10, height = 6, dpi = 300)
+#ggsave(full_file, plot = plt, width = 7, height = 4.2, dpi = 600, compression = "lzw")
+ggsave(full_file, plot = plt, width = 9, height = 5.4, dpi = 600, compression = "lzw")
+
 

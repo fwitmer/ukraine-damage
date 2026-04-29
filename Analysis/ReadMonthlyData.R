@@ -11,10 +11,17 @@
 #
 ##########################################################################
 
-library(sf)
-library(dplyr) 
-library(lubridate) # for SAR month shift
-library(stringr) # for str_replace_all
+if (exists("load_install_lib")) {
+  load_install_lib("sf")
+  load_install_lib("dplyr")
+  load_install_lib("lubridate") # for SAR month shift
+  load_install_lib("stringr") # for str_replace_all
+} else {
+  library(sf)
+  library(dplyr) 
+  library(lubridate) # for SAR month shift
+  library(stringr) # for str_replace_all
+}
 
 ##########################
 # join GHS data
