@@ -204,7 +204,7 @@ total_events_km2 <- function(mnth_cnts_sf, borders_str, events_str, log_offset =
     #file_mod <- "_sqrt"
     #mnth_cnts_sf$CntsVar <- sqrt(mnth_cnts_sf$CntsKm2)
     
-    set_count_categories(mnth_cnts_sf)
+#    set_count_categories(mnth_cnts_sf)
 
     # ---- sqrt categorical bins ----
     breaks <- c(0, 1, 4, 9, 16, Inf)
@@ -361,13 +361,18 @@ final_plot <- ggdraw(combined_plt) +
 #    fontface = "bold"
   )
 
-
 outDir <- file.path(analysisDir, "Total_Event_Maps")
 #png_filename <- paste0("ADM3", "_","Combined","_TotEventsMap", "_sqrt", ".png")
 png_filename <- paste0("ADM3", "_","Combined","_TotEventsMap", "_cat", ".png")
 full_file <- file.path(outDir, png_filename)
 print(full_file)
 ggsave(full_file, plot = final_plot, width = 7, height = 9)
+
+# also save as 600 dpi tif
+tif_filename <- paste0("WitmerFigure3.tif")
+full_file <- file.path(outDir, tif_filename)
+print(full_file)
+ggsave(full_file, plot = final_plot, width = 7, height = 9, dpi=600, compression="lzw")
 
 
 #total_events_km2(adm3_viina, "ADM3", "VIINA", log_offset = FALSE)
