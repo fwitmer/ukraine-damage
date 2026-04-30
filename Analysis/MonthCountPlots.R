@@ -8,13 +8,8 @@
 #
 ##########################################################################
 
-library(sf)
-library(dplyr) 
-library(tidyr) # for pivot_longer
-library(stringr) # for str_replace_all
-library(ggplot2)
-
-baseDir <- "D:/Users/witmer/Documents/UAA/Research/Conflict_RS/Ukraine"
+#baseDir <- "D:/Users/witmer/Documents/UAA/Research/Conflict_RS/Ukraine"
+baseDir <- getwd()
 analysisDir <- file.path(baseDir, "Analysis/")
 if (!dir.exists(analysisDir))
   print(paste("ERROR invalid analysisDir", analysisDir))
@@ -29,6 +24,13 @@ if (!dir.exists(outDir)) {
   dir.create(outDir)
 }
 
+source(file.path(baseDir, "LoadInstallLib.R"))
+load_install_lib("sf")
+load_install_lib("dplyr")
+load_install_lib("tidyr") # for pivot_longer
+load_install_lib("stringr") # for str_replace_all
+load_install_lib("ggplot2")
+
 
 # load functions to read/join monthly event data & SAR data
 source(file.path(analysisDir, "ReadMonthlyData.R"))
@@ -40,7 +42,7 @@ adm3_wide <- join_wide(baseDir, SAR_DIR, "ADM3", GHSnorm = FALSE)
 # count SAR and media event months and plot them
 # REQUIRES: outDir
 ##########################
-SAR_mediaPlot <- function(wide_df, borders_str, events_str, dot_color, title_prefix="") {
+SAR_mediaPlot <- function(wide_df, borders_str, events_str, dot_color, title_prefix="", write_plot=TRUE) {
   # wide_df <- adm3_wide; events_str <- "VIINA"
 
   # Extract the monthly column names for each set
@@ -95,11 +97,12 @@ SAR_mediaPlot <- function(wide_df, borders_str, events_str, dot_color, title_pre
       legend.background = element_rect(fill = "white", color = "black", linewidth = 0.3)
     )
   
-  fname <- paste0(events_str, "-SAR_MnthCnts", ".png")
-  print(paste("writing file", fname))
-  png_filename <- file.path(outDir, fname)
-  ggsave(png_filename, plot = gg_plt, width = 8, height = 6)
-  
+  if (write_plot) {
+    fname <- paste0(events_str, "-SAR_MnthCnts", ".png")
+    print(paste("writing file", fname))
+    png_filename <- file.path(outDir, fname)
+    ggsave(png_filename, plot = gg_plt, width = 8, height = 6)
+  }
   #######################  
   # Create a dot plot with size mapped to the SAR area
   #######################  
@@ -153,18 +156,22 @@ SAR_mediaPlot <- function(wide_df, borders_str, events_str, dot_color, title_pre
         legend.box.just = "center",
         legend.background = element_rect(fill = "white", color = "black", linewidth = 0.3)
       )
-  
-  fname <- paste0(events_str, "-SAR_MnthCntsArea", ".png")
-  print(paste("writing file", fname))
-  png_filename <- file.path(outDir, fname)
-  ggsave(png_filename, plot = gg_plt, width = 8, height = 6)
+
+  if (write_plot) {
+    fname <- paste0(events_str, "-SAR_MnthCntsArea", ".png")
+    print(paste("writing file", fname))
+    png_filename <- file.path(outDir, fname)
+    ggsave(png_filename, plot = gg_plt, width = 8, height = 6)
+  }
   
   return(gg_plt)
 }
 
 # https://www.w3schools.com/colors/colors_picker.asp
-viina_plt <- SAR_mediaPlot(adm3_wide, "ADM3", "VIINA", "#a053ac", "A)") # 50% of original color: "#984ea3"
-acled_plt <- SAR_mediaPlot(adm3_wide, "ADM3", "ACLED", "#3b86c4", "B)") # 50% of original color: "#377eb8"
+#viina_plt <- SAR_mediaPlot(adm3_wide, "ADM3", "VIINA", "#a053ac", "A)", write_plot=FALSE) # 50% of original color: "#984ea3"
+#acled_plt <- SAR_mediaPlot(adm3_wide, "ADM3", "ACLED", "#3b86c4", "B)", write_plot=FALSE) # 50% of original color: "#377eb8"
+viina_plt <- SAR_mediaPlot(adm3_wide, "ADM3", "VIINA", "#0072B2", "A)", write_plot=FALSE)
+acled_plt <- SAR_mediaPlot(adm3_wide, "ADM3", "ACLED", "#CC79A7", "B)", write_plot=FALSE)
 
 # combine these plots together in one row after moving legend to the bottom
 library(patchwork)
@@ -177,6 +184,9 @@ print(full_file)
 #ggsave(full_file, plot = combined, width = 14, height = 8) # works w/ base_size = 14
 ggsave(full_file, plot = combined, width = 7, height = 4)
 
+full_file <- file.path(outDir, "WitmerFigure6.tif")
+print(full_file)
+ggsave(full_file, plot = combined, width = 7, height = 4, dpi=600, compression="lzw")
 
 
 SAR_mediaPlot(adm3_wide, "ADM3", "BOTH", "tomato")
