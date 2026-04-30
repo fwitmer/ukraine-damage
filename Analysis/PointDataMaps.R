@@ -166,7 +166,7 @@ set_count_categories(mnth_cnts_sf) {
 #   requires global 'analysisDir'
 #   requires global 'adm1_sf'
 #############################
-total_events_km2 <- function(mnth_cnts_sf, borders_str, events_str, log_offset = FALSE) {
+total_events_km2 <- function(mnth_cnts_sf, borders_str, events_str, log_offset = FALSE, write_map=TRUE) {
   # mnth_cnts_sf <- adm3_viina; events_str <- "VIINA"
   # extract month labels for all of 2022 and Jan-Sep 2023
   #mnth_vars <- grep("^m([0-9]{2}_2022|0[0-9]_2023)$", colnames(mnth_cnts_sf), value = TRUE)
@@ -318,23 +318,24 @@ total_events_km2 <- function(mnth_cnts_sf, borders_str, events_str, log_offset =
     )
   #print(map_plt)
 
-  
-  outDir <- file.path(analysisDir, "Total_Event_Maps")
-  if (!dir.exists(outDir)) {
-    print(paste("creating directory:", outDir))
-    dir.create(outDir)
-  }
-  png_filename <- paste0(borders_str, "_",events_str,"_TotEventsMap", file_mod, ".png")
-  full_file <- file.path(outDir, png_filename)
-  print(full_file)
-  ggsave(full_file, plot = map_plt, width = 8, height = 6)
-  
+
+  if (write_map) {
+    outDir <- file.path(analysisDir, "Total_Event_Maps")
+    if (!dir.exists(outDir)) {
+      print(paste("creating directory:", outDir))
+      dir.create(outDir)
+    }
+    png_filename <- paste0(borders_str, "_",events_str,"_TotEventsMap", file_mod, ".png")
+    full_file <- file.path(outDir, png_filename)
+    print(full_file)
+    ggsave(full_file, plot = map_plt, width = 8, height = 6)
+  }  
   return(map_plt)
 }
 
 # square root categories
-viina_plt <- total_events_km2(adm3_viina, "ADM3", "VIINA", log_offset = 10)
-acled_plt <- total_events_km2(adm3_acled, "ADM3", "ACLED", log_offset = 10)
+viina_plt <- total_events_km2(adm3_viina, "ADM3", "VIINA", log_offset = 10, write_map=FALSE)
+acled_plt <- total_events_km2(adm3_acled, "ADM3", "ACLED", log_offset = 10, write_map=FALSE)
 
 #viina_plt <- viina_plt + labs(subtitle = "VIINA Total Events / km²")
 #acled_plt <- acled_plt + labs(subtitle = "ACLED Total Events / km²")
@@ -359,6 +360,10 @@ final_plot <- ggdraw(combined_plt) +
     hjust = 0, vjust = 1,
     size = 12
 #    fontface = "bold"
+  ) +
+  theme(
+    plot.background = element_rect(fill = "white", color = "black", linewidth = 1.0),
+    plot.margin = margin(4, 4, 4, 4)
   )
 
 outDir <- file.path(analysisDir, "Total_Event_Maps")

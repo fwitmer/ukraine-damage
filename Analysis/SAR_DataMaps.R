@@ -217,7 +217,7 @@ total_sar <- function(mnth_sar_sf, borders_str, sar_str, trans) {
     theme_minimal() +
     theme(
       panel.background = element_rect(fill = "white", color = NA), # White background for the map
-      plot.background = element_rect(fill = "white", color = NA),  # White background for the entire plot
+      plot.background = element_rect(fill = "white", color = "black", linewidth = 1.0),  # Border around the entire plot
       panel.grid = element_blank(),  # Remove gridlines
       plot.title = element_text(size = 14, hjust = 0.5), # Adjust title position
       
