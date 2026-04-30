@@ -16,13 +16,8 @@
 #
 ##########################################################################
 
-library(sf)
-library(dplyr) 
-library(tidyr) # for pivot_longer
-library(stringr) # for str_replace_all
-library(ggplot2)
-
-baseDir <- "D:/Users/witmer/Documents/UAA/Research/Conflict_RS/Ukraine"
+#baseDir <- "D:/Users/witmer/Documents/UAA/Research/Conflict_RS/Ukraine"
+baseDir <- getwd()
 analysisDir <- file.path(baseDir, "Analysis/")
 if (!dir.exists(analysisDir))
   print(paste("ERROR invalid analysisDir", analysisDir))
@@ -37,6 +32,12 @@ if (!dir.exists(outDir)) {
   dir.create(outDir)
 }
 
+source(file.path(baseDir, "LoadInstallLib.R"))
+load_install_lib("sf")
+load_install_lib("dplyr")
+load_install_lib("ggplot2")
+load_install_lib("tidyr") # for pivot_longer
+load_install_lib("stringr") # for str_replace_all
 
 # load functions to read/join monthly event data & SAR data
 source(file.path(analysisDir, "ReadMonthlyData.R"))
@@ -230,7 +231,7 @@ map_counts <- function(cat_cnts_sf, cnt_var, borders_str, max_mnths, dmg_label, 
     theme_minimal() +
     theme(
       panel.background = element_rect(fill = "white", color = NA), # White background for the map
-      plot.background = element_rect(fill = "white", color = NA),  # White background for the entire plot
+      plot.background = element_rect(fill = "white", color = "black", linewidth = 1.0),  # Border around the entire plot
       panel.grid = element_blank(),  # Remove gridlines
       plot.title = element_text(size = 14, hjust = 0.5), # Adjust title position
       
@@ -239,20 +240,29 @@ map_counts <- function(cat_cnts_sf, cnt_var, borders_str, max_mnths, dmg_label, 
       legend.position.inside = c(0.05, 0.05),
       legend.justification = c("left", "bottom"),
       legend.background = element_rect(fill = "white", color = "black", linewidth = 0.3),
+      legend.text = element_text(size = 10),
+      legend.title = element_text(size = 11),
+      legend.key.size = unit(1.0, "lines"),
       axis.title = element_blank(),
       axis.text = element_blank(), # remove the lat/lon text labels
       axis.ticks = element_blank()
     )
   #print(gg_plt)
-  # write plot to png file
-  fname <- paste0("CAT_", borders_str, "_", cnt_var, ".png")
-  print(paste("writing file", fname))
-  png_filename <- file.path(outDir, fname)
-  ggsave(png_filename, plot = gg_plt, width = 8, height = 6)
+  if (FALSE) {
+    # write plot to png file
+    fname <- paste0("CAT_", borders_str, "_", cnt_var, ".png")
+    print(paste("writing file", fname))
+    png_filename <- file.path(outDir, fname)
+    ggsave(png_filename, plot = gg_plt, width = 8, height = 6)
+  } else {
+    full_file <- file.path(outDir, "WitmerFigure5.tif")
+    print(full_file)
+    ggsave(full_file, plot = gg_plt, width = 7, height = 5, dpi=600, compression="lzw")
+  }
 }
 
 max_mnths <- ncol(adm3_cat) - 1
-map_counts(cat_cnts_sf, "COUNT_0", "ADM3", max_mnths, "no damage", "#8856a7")
-map_counts(cat_cnts_sf, "COUNT_1", "ADM3", max_mnths, "media reported damage", "#4daf4a")
-map_counts(cat_cnts_sf, "COUNT_2", "ADM3", max_mnths, "SAR damage", "#377eb8")
+#map_counts(cat_cnts_sf, "COUNT_0", "ADM3", max_mnths, "no damage", "#8856a7")
+#map_counts(cat_cnts_sf, "COUNT_1", "ADM3", max_mnths, "media reported damage", "#4daf4a")
+#map_counts(cat_cnts_sf, "COUNT_2", "ADM3", max_mnths, "SAR damage", "#377eb8")
 map_counts(cat_cnts_sf, "COUNT_3", "ADM3", max_mnths, "both media & SAR damage", "#e41a1c")
