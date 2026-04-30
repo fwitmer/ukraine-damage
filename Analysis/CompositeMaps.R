@@ -400,7 +400,7 @@ total_comp_map <- function(adm_comp, trans, borders_str) {
     theme_minimal() +
     theme(
       panel.background = element_rect(fill = "white", color = NA), # White background for the map
-      plot.background = element_rect(fill = "white", color = NA),  # White background for the entire plot
+      plot.background = element_rect(fill = "white", color = "black", linewidth = 1.0),  # Border around the entire plot
       panel.grid = element_blank(),  # Remove gridlines
       plot.title = element_text(size = 14, hjust = 0.5), # Adjust title position
 
@@ -409,6 +409,9 @@ total_comp_map <- function(adm_comp, trans, borders_str) {
       legend.position.inside = c(0.05, 0.05),
       legend.justification = c("left", "bottom"),
       legend.background = element_rect(fill = "white", color = "black", linewidth = 0.3),
+      legend.text = element_text(size = 10),
+      legend.title = element_text(size = 11),
+      legend.key.size = unit(1.0, "lines"),
       axis.title = element_blank(),
       axis.text = element_blank(), # remove the lat/lon text labels
       axis.ticks = element_blank()
@@ -416,12 +419,18 @@ total_comp_map <- function(adm_comp, trans, borders_str) {
   
   # Save the plot to a PNG file
   #print(gg_plt)
-  fname <- paste0(comp_prefix, borders_str, "_AllMonths", file_mod, ".png")
-  print(paste("writing file", fname))
   folder <- paste0("Comp", trans, "_", borders_str)
   outDir <- file.path(analysisDir, folder)
-  png_filename <- file.path(outDir, fname)
-  ggsave(png_filename, plot = gg_plt, width = 8, height = 6)
+  if (FALSE) {
+    fname <- paste0(comp_prefix, borders_str, "_AllMonths", file_mod, ".png")
+    print(paste("writing file", fname))
+    png_filename <- file.path(outDir, fname)
+    ggsave(png_filename, plot = gg_plt, width = 8, height = 6)
+  } else {
+    full_file <- file.path(outDir, "WitmerFigure7.tif")
+    print(paste("writing file", full_file))
+    ggsave(full_file, plot = gg_plt, width = 7, height = 5, dpi=600, compression="lzw")
+  }
 }
 
 total_comp_map(df_combined, trans, "ADM3")
