@@ -58,8 +58,21 @@ plt <- ggplot(plot_data, aes(x = month, y = value, color = source, linetype = so
     name = "Event Counts (ACLED & VIINA)",
     sec.axis = sec_axis(~ . / scale_factor, name = "SAR Damage Percentage")
   ) +
-  scale_color_manual(values = c("ACLED" = "#377eb8", "VIINA" = "#984ea3", "SAR Damage" = "#e64d00")) +
-  scale_linetype_manual(values = c("ACLED" = "solid", "VIINA" = "solid", "SAR Damage" = "dashed")) +
+  scale_color_manual(values = c(
+  "ACLED" = "#CC79A7",     # reddish purple
+  "VIINA" = "#0072B2",     # blue
+  "SAR Damage" = "#E69F00" # golden orange
+  )) +
+  # bad colors:
+#  scale_color_manual(values = c(   # https://colorbrewer2.org/#type=qualitative&scheme=Set3&n=3
+#  "ACLED" = "#8dd3c7", "VIINA" = "#bebada", "SAR Damage" = "#ffffb3" )) +
+  scale_linetype_manual(values = c(
+    "ACLED" = "dotdash",
+    "VIINA" = "dashed",
+    "SAR Damage" = "solid"
+  )) +
+  #scale_color_manual(values = c("ACLED" = "#377eb8", "VIINA" = "#984ea3", "SAR Damage" = "#e64d00")) +
+  #scale_linetype_manual(values = c("ACLED" = "solid", "VIINA" = "solid", "SAR Damage" = "dashed")) +
   labs(x = "Month", title = "Event Counts and SAR Damage by Month") +
 #  theme_minimal() +
 #  theme_minimal(base_size = 14) +
@@ -83,7 +96,7 @@ plt <- ggplot(plot_data, aes(x = month, y = value, color = source, linetype = so
     legend.title = element_blank(), # no legend title
     legend.text = element_text(size = 11),
     legend.key.size = unit(0.95, "lines"),
-    legend.key.width = unit(2.0, "lines"),
+    legend.key.width = unit(2.3, "lines"),
     legend.spacing.y = unit(0.1, "lines"),
     legend.margin = margin(3, 4, 3, 4)
   ) + 
