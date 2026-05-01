@@ -80,6 +80,7 @@ plt <- ggplot(plot_data, aes(x = month, y = value, color = source, linetype = so
   theme(
     panel.background = element_rect(fill = "white"),
     plot.background = element_rect(fill = "white"),
+    panel.border = element_rect(color = "black", fill = NA, linewidth = 0.5),
     panel.grid.major = element_line(color = "gray"),
     panel.grid.minor = element_line(color = "lightgray"),
     panel.grid.major.x = element_blank(), # Remove major vertical lines
@@ -125,6 +126,6 @@ fname <- "WitmerFigure1.tif"
 full_file <- file.path(plotDir, fname)
 print(full_file)
 ggsave(full_file, plot = plt, width = 7, height = 4.2, dpi = 600, compression = "lzw")
-#ggsave(full_file, plot = plt, width = 9, height = 5.4, dpi = 600, compression = "lzw")
+
 
 
