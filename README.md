@@ -6,7 +6,7 @@ A full description of the data, analysis, and research findings has been publish
 
 Witmer, F., C. Scher, J. Van Den Hoek, J. O’loughlin (2026). “Measuring and accounting for war destruction using human-reported and satellite-derived conflict data: Ukraine 2022-2023.” *Annals of the American Association of Geographers*. <https://doi.org/10.1080/24694452.2026.2681729>.
 
-You may access the [author's version of the article here](https://github.com/fwitmer/ukraine-damage/WitmerEtal2026_UkraineWarDestruction_PrePress.pdf) or the [Version of Record available from the publisher](https://www.tandfonline.com/doi/full/10.1080/24694452.2026.2681729).
+You may access the [author's version of the article here](https://github.com/fwitmer/ukraine-damage/blob/main/WitmerEtal2026_UkraineWarDestruction_PrePress.pdf) or the [Version of Record available from the publisher](https://www.tandfonline.com/doi/full/10.1080/24694452.2026.2681729).
 
 ## Space-time animation for conflict event density for the study period March 2022 to October 2023
 
