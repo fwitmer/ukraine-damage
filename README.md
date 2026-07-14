@@ -8,6 +8,8 @@ Witmer, F., C. Scher, J. Van Den Hoek, J. O’loughlin (2026). “Measuring and 
 
 You may access the [author's version of the article here](https://github.com/fwitmer/ukraine-damage/blob/main/WitmerEtal2026_UkraineWarDestruction_PrePress.pdf) or the [Version of Record available from the publisher](https://www.tandfonline.com/doi/full/10.1080/24694452.2026.2681729).
 
+This paper is part of the [Urban Place Annihilation During Warfare Forum](https://www.tandfonline.com/doi/full/10.1080/24694452.2026.2681728).
+
 ## Space-time animation for conflict event density for the study period March 2022 to October 2023
 
 <img src="Analysis/ADM3_VIINA/ADM3_VIINA_cat/ADM3_VIINA_cat.gif" alt="VIINA Events/km2" width="600"/> <img src="Analysis/ADM3_ACLED/ADM3_ACLED_cat/ADM3_ACLED_cat.gif" alt="ACLED Events/km2" width="600"/>
